@@ -26,9 +26,12 @@
 import Combine
 import SwiftUI
 
-public extension CloudStorage where T == Bool {
+@propertyWrapper
+public struct CloudStorage<T>: DynamicProperty {
 
-    init(wrappedValue: Bool, _ key: String) {
+    // MARK: - Initializers
+
+    public init(wrappedValue: T, _ key: String) where T == Bool {
         self.init { adapter in
             guard adapter.containsValue(forKey: key) else {
                 return wrappedValue
@@ -39,11 +42,7 @@ public extension CloudStorage where T == Bool {
         }
     }
 
-}
-
-public extension CloudStorage where T == String {
-
-    init(wrappedValue: String, _ key: String) {
+    public init(wrappedValue: T, _ key: String) where T == String {
         self.init { adapter in
             adapter.string(forKey: key) ?? wrappedValue
         } set: { newValue, adapter in
@@ -51,11 +50,7 @@ public extension CloudStorage where T == String {
         }
     }
 
-}
-
-public extension CloudStorage where T: RawRepresentable, T.RawValue == String {
-
-    init(wrappedValue: T, _ key: String) {
+    public init(wrappedValue: T, _ key: String) where T: RawRepresentable, T.RawValue == String {
         self.init { adapter in
             guard adapter.containsValue(forKey: key),
                   let raw = adapter.string(forKey: key),
@@ -68,39 +63,7 @@ public extension CloudStorage where T: RawRepresentable, T.RawValue == String {
         }
     }
 
-}
-
-public extension CloudStorage where T == String? {
-
-    init(_ key: String) {
-        self.init { adapter in
-            adapter.string(forKey: key)
-        } set: { newValue, adapter in
-            adapter.set(newValue, forKey: key)
-        }
-    }
-
-}
-
-public extension CloudStorage {
-
-    init<R>(_ key: String) where T == R?, R: RawRepresentable, R.RawValue == String {
-        self.init { adapter in
-            guard let raw = adapter.string(forKey: key),
-                  let val = R(rawValue: raw) else {
-                return nil
-            }
-            return val
-        } set: { newValue, adapter in
-            adapter.set(newValue?.rawValue, forKey: key)
-        }
-    }
-
-}
-
-public extension CloudStorage where T == Int {
-
-    init(wrappedValue: Int, _ key: String) {
+    public init(wrappedValue: T, _ key: String) where T == Int {
         self.init { adapter in
             guard adapter.containsValue(forKey: key) else {
                 return wrappedValue
@@ -111,11 +74,7 @@ public extension CloudStorage where T == Int {
         }
     }
 
-}
-
-public extension CloudStorage where T: RawRepresentable, T.RawValue == Int {
-
-    init(wrappedValue: T, _ key: String) {
+    public init(wrappedValue: T, _ key: String) where T: RawRepresentable, T.RawValue == Int {
         self.init { adapter in
             guard adapter.containsValue(forKey: key),
                   let val = T(rawValue: adapter.int(forKey: key)) else {
@@ -127,11 +86,58 @@ public extension CloudStorage where T: RawRepresentable, T.RawValue == Int {
         }
     }
 
-}
+    public init(wrappedValue: Double, _ key: String) where T == Double {
+        self.init { adapter in
+            guard adapter.containsValue(forKey: key) else {
+                return wrappedValue
+            }
+            return adapter.double(forKey: key)
+        } set: { newValue, adapter in
+            adapter.set(newValue, forKey: key)
+        }
+    }
 
-public extension CloudStorage where T == Int? {
+    public init(wrappedValue: T, _ key: String) where T: RawRepresentable, T.RawValue == Double {
+        self.init { adapter in
+            guard adapter.containsValue(forKey: key),
+                  let val = T(rawValue: adapter.double(forKey: key)) else {
+                return wrappedValue
+            }
+            return val
+        } set: { newValue, adapter in
+            adapter.set(newValue.rawValue, forKey: key)
+        }
+    }
 
-    init(_ key: String) {
+    public init(wrappedValue: T, _ key: String) where T == Data {
+        self.init { adapter in
+            adapter.data(forKey: key) ?? wrappedValue
+        } set: { newValue, adapter in
+            adapter.set(newValue, forKey: key)
+        }
+    }
+
+    public init(_ key: String) where T == String? {
+        self.init { adapter in
+            adapter.string(forKey: key)
+        } set: { newValue, adapter in
+            adapter.set(newValue, forKey: key)
+        }
+    }
+
+    public init<R>(_ key: String) where T == R?, R: RawRepresentable, R.RawValue == String {
+        self.init { adapter in
+            guard let raw = adapter.string(forKey: key),
+                  let val = R(rawValue: raw) else {
+                return nil
+            }
+            return val
+        } set: { newValue, adapter in
+            adapter.set(newValue?.rawValue, forKey: key)
+        }
+    }
+
+    public init(_ key: String) where T == Int? {
         self.init { adapter in
             guard adapter.containsValue(forKey: key) else {
                 return nil
@@ -146,11 +152,7 @@ public extension CloudStorage where T == Int? {
         }
     }
 
-}
-
-public extension CloudStorage {
-
-    init<R>(_ key: String) where T == R?, R: RawRepresentable, R.RawValue == Int {
+    public init<R>(_ key: String) where T == R?, R: RawRepresentable, R.RawValue == Int {
         self.init { adapter in
             guard adapter.containsValue(forKey: key),
                   let val = R(rawValue: adapter.int(forKey: key)) else {
@@ -166,26 +168,7 @@ public extension CloudStorage {
         }
     }
 
-}
-
-public extension CloudStorage where T == Double {
-
-    init(wrappedValue: Double, _ key: String) {
-        self.init { adapter in
-            guard adapter.containsValue(forKey: key) else {
-                return wrappedValue
-            }
-            return adapter.double(forKey: key)
-        } set: { newValue, adapter in
-            adapter.set(newValue, forKey: key)
-        }
-    }
-
-}
-
-public extension CloudStorage where T == Double? {
-
-    init(_ key: String) {
+    public init(_ key: String) where T == Double? {
         self.init { adapter in
             guard adapter.containsValue(forKey: key) else {
                 return nil
@@ -200,27 +183,7 @@ public extension CloudStorage where T == Double? {
         }
     }
 
-}
-
-public extension CloudStorage where T: RawRepresentable, T.RawValue == Double {
-
-    init(wrappedValue: T, _ key: String) {
-        self.init { adapter in
-            guard adapter.containsValue(forKey: key),
-                  let val = T(rawValue: adapter.double(forKey: key)) else {
-                return wrappedValue
-            }
-            return val
-        } set: { newValue, adapter in
-            adapter.set(newValue.rawValue, forKey: key)
-        }
-    }
-
-}
-
-public extension CloudStorage {
-
-    init<R>(_ key: String) where T == R?, R: RawRepresentable, R.RawValue == Double {
+    public init<R>(_ key: String) where T == R?, R: RawRepresentable, R.RawValue == Double {
         self.init { adapter in
             guard adapter.containsValue(forKey: key),
                   let val = R(rawValue: adapter.double(forKey: key)) else {
@@ -236,34 +199,13 @@ public extension CloudStorage {
         }
     }
 
-}
-
-public extension CloudStorage where T == Data {
-
-    init(wrappedValue: Data, _ key: String) {
-        self.init { adapter in
-            adapter.data(forKey: key) ?? wrappedValue
-        } set: { newValue, adapter in
-            adapter.set(newValue, forKey: key)
-        }
-    }
-
-}
-
-public extension CloudStorage where T == Data? {
-
-    init(_ key: String) {
+    public init(_ key: String) where T == Data? {
         self.init { adapter in
             adapter.data(forKey: key)
         } set: { newValue, adapter in
             adapter.set(newValue, forKey: key)
         }
     }
-
-}
-
-@propertyWrapper
-public struct CloudStorage<T>: DynamicProperty {
 
     // MARK: - PropertyWrapper
 
@@ -286,8 +228,8 @@ public struct CloudStorage<T>: DynamicProperty {
 
     // MARK: - Private
 
-    fileprivate init(get: @escaping (Adapter) -> T,
-                     set: @escaping (T, Adapter) -> Void) {
+    private init(get: @escaping (Adapter) -> T,
+                 set: @escaping (T, Adapter) -> Void) {
         getter = get
         setter = set
     }
@@ -299,7 +241,7 @@ public struct CloudStorage<T>: DynamicProperty {
     private var adapter = Adapter()
 
     @MainActor
-    fileprivate final class Adapter: ObservableObject {
+    private final class Adapter: ObservableObject {
 
         init() {
             observe()
