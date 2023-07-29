@@ -1,5 +1,5 @@
 // CloudStorage
-// CloudStorageTests.swift
+// Adapter.swift
 //
 // MIT License
 //
@@ -23,14 +23,55 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-@testable import CloudStorage
-import XCTest
+import Combine
+import Foundation
 
-final class CloudStorageTests: XCTestCase {
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-//        XCTAssertEqual(CloudStorage().text, "Hello, World!")
+@MainActor
+final class Adapter: ObservableObject, Sendable {
+
+    // MARK: - Initializers
+
+    init() {}
+
+    // MARK: - API
+
+    func start() {
+        subscription = NotificationCenter.default
+            .publisher(for: NSUbiquitousKeyValueStore.didChangeExternallyNotification)
+            .map { notif -> Notification? in notif }
+            .subscribe(on: DispatchQueue.main)
+            .assign(to: \.notification, on: self)
     }
+
+    func stop() {
+        subscription = nil
+    }
+
+    @Published
+    var notification: Notification?
+
+    // MARK: - Private
+
+    @AutoCancel
+    private var subscription: Cancellable?
+
+}
+
+@propertyWrapper
+final class AutoCancel {
+
+    init(wrappedValue: Cancellable?) {
+        self.wrappedValue = wrappedValue
+    }
+
+    var wrappedValue: Cancellable? {
+        didSet {
+            oldValue?.cancel()
+        }
+    }
+
+    deinit {
+        wrappedValue?.cancel()
+    }
+
 }

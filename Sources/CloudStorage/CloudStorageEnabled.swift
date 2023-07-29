@@ -1,5 +1,5 @@
 // CloudStorage
-// CloudStorageTests.swift
+// CloudStorageEnabled.swift
 //
 // MIT License
 //
@@ -23,14 +23,33 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-@testable import CloudStorage
-import XCTest
+import SwiftUI
 
-final class CloudStorageTests: XCTestCase {
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-//        XCTAssertEqual(CloudStorage().text, "Hello, World!")
+/// A property wrapper that determines whether cloud storage is enabled for the user.
+@available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, macCatalyst 16.0, *)
+@propertyWrapper
+public struct CloudStorageEnabled: DynamicProperty {
+
+    // MARK: - Initializers
+
+    public init() {
+        let key = (Bundle.main.bundleIdentifier ?? "com.cloudstorage") + ".shouldusecloud"
+        _cloudEnabled = AppStorage(wrappedValue: false, key, store: .standard)
     }
+
+    // MARK: - Property Wrapper
+
+    public var wrappedValue: Bool {
+        cloudEnabled
+    }
+
+    public var projectedValue: Binding<Bool> {
+        $cloudEnabled
+    }
+
+    // MARK: - Private
+
+    @AppStorage
+    private var cloudEnabled: Bool
+
 }
